@@ -23,6 +23,8 @@ end
 ---@class OptsVirtualLines
 ---@field only_current_line boolean Only render for current line
 ---@field highlight_whole_line boolean Highlight empty space to the left of a diagnostic
+---@field width number Width of the virtual line
+---@field auto_width boolean Use the width of the smallest window with the buffer open
 
 -- Registers a wrapper-handler to render lsp lines.
 -- This should usually only be called once, during initialisation.
