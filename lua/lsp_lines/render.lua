@@ -21,10 +21,10 @@ local ICONS = {
   [vim.diagnostic.severity.HINT] = "",
 }
 local ICON_HIGHLIGHTS = {
-  [vim.diagnostic.severity.ERROR] = "DiagnosticVirtualIconError",
-  [vim.diagnostic.severity.WARN] = "DiagnosticVirtualIconWarn",
-  [vim.diagnostic.severity.INFO] = "DiagnosticVirtualIconInfo",
-  [vim.diagnostic.severity.HINT] = "DiagnosticVirtualIconHint",
+  [vim.diagnostic.severity.ERROR] = "DiagnosticSignError",
+  [vim.diagnostic.severity.WARN] = "DiagnosticSignWarn",
+  [vim.diagnostic.severity.INFO] = "DiagnosticSignInfo",
+  [vim.diagnostic.severity.HINT] = "DiagnosticSignHint",
 }
 
 -- These don't get copied, do they? We only pass around and compare pointers, right?
