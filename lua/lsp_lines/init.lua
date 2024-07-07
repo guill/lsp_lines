@@ -25,6 +25,7 @@ end
 ---@field highlight_whole_line boolean Highlight empty space to the left of a diagnostic
 ---@field width number Width of the virtual line
 ---@field auto_width boolean Use the width of the smallest window with the buffer open
+---@field severity vim.diagnostic.SeverityFilter
 
 -- Registers a wrapper-handler to render lsp lines.
 -- This should usually only be called once, during initialisation.

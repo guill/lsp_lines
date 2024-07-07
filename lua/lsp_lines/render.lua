@@ -91,6 +91,41 @@ local function word_wrap(text, width)
   return table.concat(result, "\n")
 end
 
+---@param severity vim.diagnostic.SeverityFilter
+local function get_enabled_severities(severity)
+  if not severity then
+    return {
+      [vim.diagnostic.severity.ERROR] = true,
+      [vim.diagnostic.severity.WARN] = true,
+      [vim.diagnostic.severity.INFO] = true,
+      [vim.diagnostic.severity.HINT] = true,
+    }
+  end
+
+  if type(severity) == type(vim.diagnostic.severity.ERROR) then
+    return {
+      [severity] = true,
+    }
+  end
+
+  if type(severity) == "table" then
+    if severity.min or severity.max then
+      local min = severity.min or vim.diagnostic.severity.diagnostic.HINT
+      local max = severity.max or vim.diagnostic.severity.diagnostic.ERROR
+      local result = {}
+      for i=max, min do
+        result[i] = true
+      end
+      return result
+    end
+    local result = {}
+    for _, s in ipairs(severity) do
+      result[s] = true
+    end
+    return result
+  end
+end
+
 ---@param namespace number
 ---@param bufnr number
 ---@param diagnostics table
@@ -129,35 +164,38 @@ function M.show(namespace, bufnr, diagnostics, opts, source)
   local line_stacks = {}
   local prev_lnum = -1
   local prev_col = 0
+  local enabled_severity = get_enabled_severities(opts.virtual_lines.severity)
   for _, diagnostic in ipairs(diagnostics) do
-    if line_stacks[diagnostic.lnum] == nil then
-      line_stacks[diagnostic.lnum] = {}
+    if enabled_severity[diagnostic.severity] then
+      if line_stacks[diagnostic.lnum] == nil then
+        line_stacks[diagnostic.lnum] = {}
+      end
+
+      local stack = line_stacks[diagnostic.lnum]
+
+      if diagnostic.lnum ~= prev_lnum then
+        table.insert(stack, { SPACE, string.rep(" ", distance_between_cols(bufnr, diagnostic.lnum, 0, diagnostic.col)) })
+      elseif diagnostic.col ~= prev_col then
+        -- Clarification on the magic numbers below:
+        -- +1: indexing starting at 0 in one API but at 1 on the other.
+        -- -1: for non-first lines, the previous col is already drawn.
+        table.insert(
+          stack,
+          { SPACE, string.rep(" ", distance_between_cols(bufnr, diagnostic.lnum, prev_col + 1, diagnostic.col) - 1) }
+        )
+      else
+        table.insert(stack, { OVERLAP, diagnostic.severity })
+      end
+
+      if diagnostic.message:find("^%s*$") then
+        table.insert(stack, { BLANK, diagnostic })
+      else
+        table.insert(stack, { DIAGNOSTIC, diagnostic })
+      end
+
+      prev_lnum = diagnostic.lnum
+      prev_col = diagnostic.col
     end
-
-    local stack = line_stacks[diagnostic.lnum]
-
-    if diagnostic.lnum ~= prev_lnum then
-      table.insert(stack, { SPACE, string.rep(" ", distance_between_cols(bufnr, diagnostic.lnum, 0, diagnostic.col)) })
-    elseif diagnostic.col ~= prev_col then
-      -- Clarification on the magic numbers below:
-      -- +1: indexing starting at 0 in one API but at 1 on the other.
-      -- -1: for non-first lines, the previous col is already drawn.
-      table.insert(
-        stack,
-        { SPACE, string.rep(" ", distance_between_cols(bufnr, diagnostic.lnum, prev_col + 1, diagnostic.col) - 1) }
-      )
-    else
-      table.insert(stack, { OVERLAP, diagnostic.severity })
-    end
-
-    if diagnostic.message:find("^%s*$") then
-      table.insert(stack, { BLANK, diagnostic })
-    else
-      table.insert(stack, { DIAGNOSTIC, diagnostic })
-    end
-
-    prev_lnum = diagnostic.lnum
-    prev_col = diagnostic.col
   end
 
   for lnum, lelements in pairs(line_stacks) do
